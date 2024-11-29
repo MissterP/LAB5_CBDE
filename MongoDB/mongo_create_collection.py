@@ -98,10 +98,10 @@ def create_indexes(db):
     try:
         # Compound index on 'partInfo.size' and 'partInfo.type' for Query 2
         db.partsupp.create_index(
-            [("partInfo.size", ASCENDING), ("partInfo.type", ASCENDING)],
+            [("partInfo.size", ASCENDING), ("partInfo.type", ASCENDING), ("suppInfo.nation.region", ASCENDING)],
             name="idx_size_type"
         )
-        print("Compound index created on 'partsupp.partInfo.size' and 'partsupp.partInfo.type'. For Query 2")
+        print("Compound index created on 'partsupp.partInfo.size', 'partsupp.partInfo.type' and 'suppInfo.nation.region'. For Query 2")
 
         # Index on 'suppInfo.nation.region' for Query 2 and 4
         db.partsupp.create_index(
