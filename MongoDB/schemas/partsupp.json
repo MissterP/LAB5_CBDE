@@ -1,0 +1,76 @@
+{
+    "bsonType": "object",
+    "required": ["partKey", "suppKey"],
+    "properties": {
+        "partInfo":{
+            "bsonType": "object",
+            "required": ["partKey"],
+            "properties": {
+                "partKey": {
+                    "bsonType": "int"
+                },
+                "name": {
+                    "bsonType": "string",
+                    "maxLength": 55
+                },
+                "mfgr": {
+                    "bsonType": "string",
+                    "maxLength": 25
+                },
+                "brand": {
+                    "bsonType": "string",
+                    "maxLength": 10
+                },
+                "type": {
+                    "bsonType": "string",
+                    "maxLength": 25
+                },
+                "size": {
+                    "bsonType": "int"
+                }
+            }
+        },
+        "suppInfo":{
+            "bsonType": "object",
+            "required": ["suppKey"],
+            "properties": {
+                "suppKey": {
+                    "bsonType": "int"
+                },
+                "name": {
+                    "bsonType": "string",
+                    "maxLength": 55
+                },
+                "address": {
+                    "bsonType": "string",
+                    "maxLength": 40
+                },
+                "nation": {
+                    "bsonType": "object",
+                    "required": ["name", "region"],
+                    "properties": {
+                        "name": {
+                            "bsonType": "string",
+                            "maxLength": 25
+                        },
+                        "region": {
+                            "bsonType": "string",
+                            "maxLength": 25
+                        }
+                    }
+                },
+                "phone": {
+                    "bsonType": "string",
+                    "maxLength": 15
+                },
+                "acctBal": {
+                    "bsonType": "double"
+                },
+                "comment": {
+                    "bsonType": "string",
+                    "maxLength": 101
+                }
+            }
+        }
+    }
+}

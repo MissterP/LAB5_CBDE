@@ -1,0 +1,86 @@
+{
+    "bsonType": "object",
+    "required": ["orderKey", "customerKey", "partKey", "suppKey"],
+    "properties": {
+        "orderKey": {
+            "bsonType": "int"
+        },
+        "orderDate": {
+            "bsonType": "date"
+        },
+        "shipPriority": {
+            "bsonType": "int"
+        },
+        "customerInfo": {
+            "bsonType": "object",
+            "required": ["customerKey"],
+            "properties": {
+                "customerKey": {
+                    "bsonType": "int"
+                },
+                "nation": {
+                    "bsonType": "object",
+                    "required": ["name", "region"],
+                    "properties": {
+                        "name": {
+                            "bsonType": "string",
+                            "maxLength": 25
+                        },
+                        "region": {
+                            "bsonType": "string",
+                            "maxLength": 25
+                        }
+                    }
+                },
+                "mktSegment": {
+                    "bsonType": "string",
+                    "maxLength": 25
+                }
+            }
+        },
+        "lineItems": {
+            "bsonType": "array",
+            "items": {
+                "bsonType": "object",
+                "required": ["partKey", "suppKey"],
+                "properties": {
+                    "partKey": {
+                        "bsonType": "int"
+                    },
+                    "suppKey": {
+                        "bsonType": "int"
+                    },
+                    "lineNumber": {
+                        "bsonType": "int"
+                    },
+                    "quantity": {
+                        "bsonType": "int"
+                    },
+                    "extendedPrice": {
+                        "bsonType": "double"
+                    },
+                    "discount": {
+                        "bsonType": "double"
+                    },
+                    "tax": {
+                        "bsonType": "double"
+                    },
+                    "returnFlag": {
+                        "bsonType": "string",
+                        "minLength": 1,
+                        "maxLength": 1
+                    },
+                    "lineStatus": {
+                        "bsonType": "string",
+                        "minLength": 1,
+                        "maxLength": 1
+                    },
+                    "shipDate": {
+                        "bsonType": "date"
+                    }
+                }
+            }
+        }
+
+    }
+}
