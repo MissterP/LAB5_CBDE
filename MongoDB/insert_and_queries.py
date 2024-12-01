@@ -340,6 +340,8 @@ def run_query1(orders_collection, date_param):
 
 def run_query2(partsupp_collection, size, type, region):
 
+    # It's supposed that it can be possible to have more than one partsupp with the same minimum supply cost. 
+    # That's why we use $lookup to get all the documents with the minimum supply cost.
     query2 = [
         {
             "$match": {
