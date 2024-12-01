@@ -64,6 +64,45 @@ def create_indexes(db):
             name="idx_lineItems_shipDate_returnFlag_lineStatus"
         )
         print("Índice compuesto 'idx_lineItems_shipDate_returnFlag_lineStatus' creado.")
+
+        db.orders.create_index(
+            [
+                ("customerInfo.mktSegment", ASCENDING),
+                ("lineItems.shipDate", ASCENDING),
+                ("orderKey", ASCENDING),
+                ("orderDate", ASCENDING),
+                ("shipPriority", ASCENDING)
+            ],
+            name="idx_mktSegment_shipDate_orderKey_orderDate_shipPriority"
+        )
+        print("Índice compuesto 'idx_mktSegment_shipDate_orderKey_orderDate_shipPriority' creado.")
+
+        db.orders.create_index(
+            [
+                ("customerInfo.nation.region", ASCENDING),
+                ("orderDate", ASCENDING),
+                ("customerInfo.nation.name", ASCENDING)
+            ],
+            name="idx_region_orderDate_nationName"
+        )
+        print("Índice compuesto 'idx_region_orderDate_nationName' creado.")
+
+        db.partsupp.create_index(
+            [
+                ("partInfo.size", ASCENDING),
+                ("partInfo.type", ASCENDING),
+                ("suppInfo.nation.region", ASCENDING),
+                ("partInfo.partKey", DESCENDING),
+                ("supplyCost", ASCENDING),
+                ("suppInfo.acctBal", DESCENDING),
+                ("suppInfo.nation.name", ASCENDING),
+                ("suppInfo.name", ASCENDING),
+            ],
+            name="idx_size_type_region_partKey_supplyCost_acctBal_nation_name"
+        )
+        print("Índice compuesto 'idx_size_type_region_partKey_supplyCost_acctBal_nation_name' creado en 'partsupp'.")
+
+
     except Exception as e:
         print(f"Error al crear índices: {e}")
     

@@ -1,6 +1,6 @@
 {
     "bsonType": "object",
-    "required": ["orderKey", "customerKey", "partKey", "suppKey"],
+    "required": ["orderKey", "customerInfo.customerKey", "lineItems.partKey", "lineItems.suppKey"],
     "properties": {
         "orderKey": {
             "bsonType": "int"

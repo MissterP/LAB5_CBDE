@@ -32,9 +32,6 @@ def get_sample_data():
     orders_documents = [
         {
             "orderKey": 1,
-            "customerKey": 101,
-            "partKey": 1001,
-            "suppKey": 5001,
             "orderDate": datetime.datetime(2024, 11, 15),
             "shipPriority": 1,
             "customerInfo": {
@@ -74,9 +71,6 @@ def get_sample_data():
         },
         {
             "orderKey": 2,
-            "customerKey": 102,
-            "partKey": 1003,
-            "suppKey": 5003,
             "orderDate": datetime.datetime(2024, 10, 20),
             "shipPriority": 2,
             "customerInfo": {
@@ -104,9 +98,6 @@ def get_sample_data():
         },
         {
             "orderKey": 3,
-            "customerKey": 103,
-            "partKey": 1004,
-            "suppKey": 5004,
             "orderDate": datetime.datetime(2024, 9, 10),
             "shipPriority": 3,
             "customerInfo": {
@@ -148,8 +139,29 @@ def get_sample_data():
 
     partsupp_documents = [
         {
-            "partKey": 1001,
-            "suppKey": 5001,
+            "supplyCost": 50.0,
+            "partInfo": {
+                "partKey": 1001,
+                "name": "Engine",
+                "mfgr": "ManufacturerA",
+                "brand": "BrandX",
+                "type": "Type1",
+                "size": 10
+            },
+            "suppInfo": {
+                "suppKey": 5001,
+                "name": "SupplierA",
+                "address": "1235 Industrial Ave",
+                "nation": {
+                    "name": "USA",
+                    "region": "North America"
+                },
+                "phone": "555-1234",
+                "acctBal": 10000.0,
+                "comment": "Reliable supplier."
+            }
+        },
+        {
             "supplyCost": 50.0,
             "partInfo": {
                 "partKey": 1001,
@@ -164,7 +176,7 @@ def get_sample_data():
                 "name": "SupplierA",
                 "address": "1234 Industrial Ave",
                 "nation": {
-                    "name": "USA",
+                    "name": "Canada",
                     "region": "North America"
                 },
                 "phone": "555-1234",
@@ -173,8 +185,6 @@ def get_sample_data():
             }
         },
         {
-            "partKey": 1002,
-            "suppKey": 5002,
             "supplyCost": 30.0,
             "partInfo": {
                 "partKey": 1002,
@@ -198,8 +208,7 @@ def get_sample_data():
             }
         },
         {
-            "partKey": 1003,
-            "suppKey": 5003,
+
             "supplyCost": 40.0,
             "partInfo": {
                 "partKey": 1003,
@@ -223,8 +232,6 @@ def get_sample_data():
             }
         },
         {
-            "partKey": 1004,
-            "suppKey": 5004,
             "supplyCost": 25.0,
             "partInfo": {
                 "partKey": 1004,
@@ -248,8 +255,6 @@ def get_sample_data():
             }
         },
         {
-            "partKey": 1005,
-            "suppKey": 5005,
             "supplyCost": 35.0,
             "partInfo": {
                 "partKey": 1005,
@@ -313,7 +318,7 @@ def run_query1(orders_collection, date_param):
         { "$sort": { "_id.returnFlag": 1, "_id.lineStatus": 1 } }
     ]
 
-    print("\n--- Executing Aggregation Query with .explain() ---\n")
+    print("\n--- Executing Aggregation Query 1 with .explain() ---\n")
     try:
         explain_doc = orders_collection.database.command(
             "aggregate", 
@@ -327,7 +332,7 @@ def run_query1(orders_collection, date_param):
 
     print("\n--- Executing Aggregation Query and Displaying Results ---\n")
     try:
-        aggregation_result = orders_collection.aggregate(query1)
+        aggregation_result = orders_collection.aggregate(query1, hint="idx_lineItems_shipDate_returnFlag_lineStatus")
         for doc in aggregation_result:
             pprint.pprint(doc)
     except Exception as e:
@@ -337,44 +342,75 @@ def run_query2(partsupp_collection, size, type, region):
 
     query2 = [
         {
-            "$match": {"partInfo.size": size, 
-                    "partInfo.type": { "$regex": f"{re.escape(type)}$", "$options": "i" }, 
-                    "suppInfo.nation.region": region
+            "$match": {
+                "partInfo.size": size,
+                "partInfo.type": { "$regex": f"{type}$", "$options": "i" },  
+                "suppInfo.nation.region": region
             }
         },
-
         {
-            "$project": {
-                "s_acctbal": "$suppInfo.acctBal",
-                "s_name": "$suppInfo.name",
-                "n_name": "$suppInfo.nation.name",
-                "p_partkey": "$partInfo.partKey",
-                "p_mfgr": "$partInfo.mfgr",
-                "s_address": "$suppInfo.address",
-                "s_phone": "$suppInfo.phone",
-                "s_comment": "$suppInfo.comment"
+            "$group": {
+                "_id": "$partInfo.partKey",
+                "minSupplyCost": { "$min": "$supplyCost" }
             }
         },
-
         {
-            
+            "$lookup": {
+                "from": "partsupp",
+                "let": { "partKey": "$_id", "minCost": "$minSupplyCost" },
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {
+                                "$and": [
+                                    { "$eq": ["$partInfo.partKey", "$$partKey"] },
+                                    { "$eq": ["$supplyCost", "$$minCost"] }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "$project": {
+                            "_id": 0,
+                            "s_acctbal": "$suppInfo.acctBal",
+                            "s_name": "$suppInfo.name",
+                            "n_name": "$suppInfo.nation.name",
+                            "p_partkey": "$partInfo.partKey",
+                            "p_mfgr": "$partInfo.mfgr",
+                            "s_address": "$suppInfo.address",
+                            "s_phone": "$suppInfo.phone",
+                            "s_comment": "$suppInfo.comment",
+                            "supplyCost": "$supplyCost"
+                        }
+                    }
+                ],
+                "as": "minSupplyDocs"
+            }
+        },
+        {
+            "$unwind": "$minSupplyDocs"
+        },
+        {
+            "$replaceRoot": { "newRoot": "$minSupplyDocs" }
+        },
+        {
+            "$sort": {
+                "s_acctbal": -1,
+                "n_name": 1,
+                "s_name": 1,
+                "p_partkey": 1
+            }
         }
-
-        {"$sort": { "s_acctbal": -1, "n_name": 1, "s_name": 1, "p_partkey": 1 }}
-
-        
-
-
     ]
 
 
-    print("\n--- Executing Aggregation Query with .explain() ---\n")
+    print("\n--- Executing Aggregation Query 2 with .explain() ---\n")
     try:
         explain_doc = partsupp_collection.database.command(
             "aggregate", 
-            "orders", 
+            "partsupp", 
             pipeline=query2, 
-            hint="idx_lineItems_shipDate_returnFlag_lineStatus",
+            hint="idx_size_type_region_partKey_supplyCost_acctBal_nation_name",
             explain=True)
         pprint.pprint(explain_doc)
     except Exception as e:
@@ -382,7 +418,114 @@ def run_query2(partsupp_collection, size, type, region):
 
     print("\n--- Executing Aggregation Query and Displaying Results ---\n")
     try:
-        aggregation_result = partsupp_collection.aggregate(query2)
+        aggregation_result = partsupp_collection.aggregate(query2, hint="idx_size_type_region_partKey_supplyCost_acctBal_nation_name")
+        for doc in aggregation_result:
+            pprint.pprint(doc)
+    except Exception as e:
+        print(f"Error executing aggregation: {e}")
+
+def run_query3(orders_collection, segment, date1, date2):
+    query3 = [
+        { "$unwind": "$lineItems" },
+        {
+            "$match": {
+                "customerInfo.mktSegment": segment,
+                "orderDate": {"$lt": date1},
+                "lineItems.shipDate": {"$gt": date2}
+            }
+        },
+        {
+            "$group": {
+                "_id": {
+                    "orderKey": "$orderKey",
+                    "orderDate": "$orderDate",
+                    "shipPriority": "$shipPriority"
+                },
+                "revenue": {
+                    "$sum": {
+                        "$multiply": [
+                            "$lineItems.extendedPrice",
+                            {"$subtract": [1, "$lineItems.discount"]}
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "$sort": {
+                "revenue": -1,
+                "_id.orderDate": 1
+            }
+        }
+    ]
+
+    print("\n--- Executing Aggregation Query 3 with .explain() ---\n")
+    try:
+        explain_doc = orders_collection.database.command(
+            "aggregate", 
+            "orders", 
+            pipeline=query3,
+            hint="idx_mktSegment_shipDate_orderKey_orderDate_shipPriority",
+            explain=True)
+        pprint.pprint(explain_doc)
+    except Exception as e:
+        print(f"Error executing .explain(): {e}")
+
+    print("\n--- Executing Aggregation Query and Displaying Results ---\n")
+    try:
+        aggregation_result = orders_collection.aggregate(query3, hint="idx_mktSegment_shipDate_orderKey_orderDate_shipPriority")
+        for doc in aggregation_result:
+            pprint.pprint(doc)
+    except Exception as e:
+        print(f"Error executing aggregation: {e}")
+
+def run_query4(orders_collection, region, date):
+    query4 = [
+        { "$unwind": "$lineItems" },
+        {
+            "$match": {
+                "customerInfo.nation.region": region,
+                "orderDate": {
+                    "$gte": date,
+                    "$lt": date + datetime.timedelta(days=365)
+                }
+            }
+        },
+        {
+            "$group": {
+                "_id": "$customerInfo.nation.name",
+                "revenue": {
+                    "$sum": {
+                        "$multiply": [
+                            "$lineItems.extendedPrice",
+                            {"$subtract": [1, "$lineItems.discount"]}
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "$sort": {
+                "revenue": -1
+            }
+        }
+    ]
+
+    print("\n--- Executing Aggregation Query 4 with .explain() ---\n")
+    try:
+        explain_doc = orders_collection.database.command(
+            "aggregate", 
+            "orders", 
+            pipeline=query4, 
+            hint="idx_region_orderDate_nationName",
+            explain=True)
+        pprint.pprint(explain_doc)
+    except Exception as e:
+        print(f"Error executing .explain(): {e}")
+
+    print("\n--- Executing Aggregation Query and Displaying Results ---\n")
+    try:
+        aggregation_result = orders_collection.aggregate(query4, hint="idx_region_orderDate_nationName")
         for doc in aggregation_result:
             pprint.pprint(doc)
     except Exception as e:
@@ -415,9 +558,19 @@ def main():
 
     run_query1(orders_collection, date_param)
 
+    size = 10
+    type = "Type1"
+    region = "North America"
 
+    run_query2(partsupp_collection, size, type, region)
 
-    run_query2(partsupp_collection, )
+    segment = "AUTOMOBILE"
+    date_param_1 = datetime.datetime(2024, 9, 10)
+    date_param_2 = datetime.datetime(2024, 11, 15)
+    run_query3(orders_collection, segment, date_param, date_param_2)
+
+    region = "Central America"
+    run_query4(orders_collection, region, date_param_1)
 
 if __name__ == "__main__":
     main()
