@@ -2,6 +2,9 @@
     "bsonType": "object",
     "required": ["partKey", "suppKey"],
     "properties": {
+        "supplyCost": {
+            "bsonType": "double"
+        },
         "partInfo":{
             "bsonType": "object",
             "required": ["partKey"],

@@ -54,77 +54,19 @@ def create_collection(client, db_name, collection_name, schema=None):
         return None
     
 def create_indexes(db):
-    # Indexes for the 'orders' collection
-    try:
-        # Compound index on 'lineItems.returnFlag' and 'lineItems.lineStatus' for Query 1
+    try: 
         db.orders.create_index(
-            [("lineItems.returnFlag", ASCENDING), ("lineItems.lineStatus", ASCENDING)],
-            name="idx_returnFlag_lineStatus"
-        )
-        print("Compound index created on 'orders.lineItems.returnFlag' and 'orders.lineItems.lineStatus'. For Query 1")
-
-        # Index on 'lineItems.shipDate' for Queries 1 and 3
-        db.orders.create_index(
-            [("lineItems.shipDate", ASCENDING)],
-            name="idx_lineItems_shipDate"
-        )
-        print("Index created on 'orders.lineItems.shipDate'. For Queries 1 and 3")
-
-        # Compound index on 'customerInfo.mktSegment', 'orderDate', and 'shipPriority' for Query 3
-        db.orders.create_index(
-            [("customerInfo.mktSegment", ASCENDING), ("orderDate", ASCENDING), ("shipPriority", ASCENDING)],
-            name="idx_mktSegment_orderDate_shipPriority"
-        )
-        print("Compound index created on 'orders.customerInfo.mktSegment', 'orders.orderDate', and 'orders.shipPriority'. For Query 3")
-
-        # Index on 'orderDate' for Query 4
-        db.orders.create_index(
-            [("orderDate", ASCENDING)],
-            name="idx_orderDate"
-        )
-        print("Index created on 'orders.orderDate'. For Query 4")
-
-        # Index on 'customerInfo.nation.region' for Query 4
-        db.orders.create_index(
-            [("customerInfo.nation.region", ASCENDING)],
-            name="idx_nation_region"
-        )
-        print("Index created on 'orders.customerInfo.nation.region'. For Query 4")
-
-    except Exception as e:
-        print(f"Error creating indexes in 'orders': {e}")
-
-    # Indexes for the 'partsupp' collection
-    try:
-        # Compound index on 'partInfo.size' and 'partInfo.type' for Query 2
-        db.partsupp.create_index(
-            [("partInfo.size", ASCENDING), ("partInfo.type", ASCENDING), ("suppInfo.nation.region", ASCENDING)],
-            name="idx_size_type"
-        )
-        print("Compound index created on 'partsupp.partInfo.size', 'partsupp.partInfo.type' and 'suppInfo.nation.region'. For Query 2")
-
-        # Index on 'suppInfo.nation.region' for Query 2 and 4
-        db.partsupp.create_index(
-            [("suppInfo.nation.region", ASCENDING)],
-            name="idx_suppInfo_nation_region"
-        )
-        print("Index created on 'partsupp.suppInfo.nation.region'. For Query 4")
-
-        # Compound index on multiple fields for a specific query (Query 2)
-        db.partsupp.create_index(
             [
-                ("suppInfo.acctBal", DESCENDING),
-                ("suppInfo.nation.name", ASCENDING),
-                ("suppInfo.name", ASCENDING),
-                ("partInfo.mfgr", ASCENDING),
-                ("partInfo.partKey", ASCENDING)
+                ("lineItems.shipDate", ASCENDING),
+                ("lineItems.returnFlag", ASCENDING),
+                ("lineItems.lineStatus", ASCENDING)
             ],
-            name="idx_acctBal_nationName_name_mfgr_brand_type_partKey"
+            name="idx_lineItems_shipDate_returnFlag_lineStatus"
         )
-        print("Compound index created on 'partsupp.suppInfo.acctBal', 'partsupp.suppInfo.nation.name', 'partsupp.suppInfo.name', 'partsupp.partInfo.mfgr', 'partsupp.partInfo.brand', 'partsupp.partInfo.type', and 'partsupp.partInfo.partKey'. For Query 2")
-
+        print("Índice compuesto 'idx_lineItems_shipDate_returnFlag_lineStatus' creado.")
     except Exception as e:
-        print(f"Error creating indexes in 'partsupp': {e}")
+        print(f"Error al crear índices: {e}")
+    
 
 def main():
     client = connect_mongo()
